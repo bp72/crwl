@@ -1,7 +1,7 @@
 DATE = $(shell date --iso=seconds)
 GITHASH = $(shell git rev-parse --short HEAD)
 VERSION = "1.0.0"
-SOURCES = helper.go proxy.go queue.go main.go
+SOURCES = inmemory.go redis.go storage.go helper.go proxy.go queue.go visited.go crawler.go main.go
 
 test:
 	go test
@@ -23,8 +23,10 @@ image: $(SOURCES)
 
 
 build: test
-	go build -o crwl \
+	go build -o bin/crwl \
 		-ldflags "-X main.version=$(VERSION) -X 'main.buildat=$(DATE)' -X 'main.githash=$(GITHASH)'" \
 		${SOURCES}
 
-
+run: build
+	# bin/crwl -domain www.xvideos.com -use-redis
+	bin/crwl -domain hindiclips.com -use-redis
