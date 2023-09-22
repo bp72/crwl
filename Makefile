@@ -27,6 +27,15 @@ build: test
 		-ldflags "-X main.version=$(VERSION) -X 'main.buildat=$(DATE)' -X 'main.githash=$(GITHASH)'" \
 		${SOURCES}
 
+build-with-race: test-with-race
+	go build -race -o bin/crwl \
+		-ldflags "-X main.version=$(VERSION) -X 'main.buildat=$(DATE)' -X 'main.githash=$(GITHASH)'" \
+		${SOURCES}		
+
 run: build
+	# bin/crwl -domain www.xvideos.com -use-redis
+	bin/crwl -domain hindiclips.com -use-redis
+
+run-with-race: build-with-race
 	# bin/crwl -domain www.xvideos.com -use-redis
 	bin/crwl -domain hindiclips.com -use-redis

@@ -17,9 +17,8 @@ import (
 )
 
 type Crawler struct {
-	TTL       time.Duration
-	UserAgent string
-	// Clients       []*fasthttp.Client
+	TTL           time.Duration
+	UserAgent     string
 	Stack         []*Task
 	TaskChan      chan *Task
 	Wg            sync.WaitGroup
@@ -28,9 +27,34 @@ type Crawler struct {
 	DoSaveContent bool
 	StorePath     string
 	statsd        statsd.Statter
-	lock          sync.Mutex
 	Pool          sync.Pool
-	// Visited       map[string]bool
+}
+
+func (c *Crawler) EnqeueMany(t *Task, ch <-chan *Link, wg *sync.WaitGroup) (int, int) {
+	start := time.Now()
+	defer c.statsd.TimingDuration("queue.enqueuemany", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
+
+	added := 0
+	total := 0
+
+	for link := range ch {
+		total++
+		_, err := t.Site.NewTask(link.Href, t.Depth+1)
+
+		if err != nil {
+			wg.Done()
+			continue
+		}
+
+		go func() {
+			defer wg.Done()
+			// c.Enqueue(nt)
+		}()
+
+		added++
+	}
+
+	return added, total
 }
 
 func (c *Crawler) Crawl(WorkerNo int) {
@@ -56,32 +80,37 @@ func (c *Crawler) Crawl(WorkerNo int) {
 		return
 	}
 
-	linksStart := time.Now()
-	links := c.Parse(reader)
-	added := 0
-
 	var wg sync.WaitGroup
+	linkchan := make(chan *Link)
+
+	links := c.Parse(reader, linkchan, &wg)
+	// c.EnqeueMany(task, linkchan, &wg)
+	startLinks := time.Now()
 
 	for _, link := range links {
 		nt, err := task.Site.NewTask(link.Href, task.Depth+1)
+
 		if err != nil {
 			continue
 		}
-		wg.Add(1)
-		go func(lc *Crawler, lwg *sync.WaitGroup, t *Task) {
-			defer lwg.Done()
-			lc.Enqueue(t)
-		}(c, &wg, nt)
 
-		added++
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			c.Enqueue(nt)
+		}()
+
 	}
+
+	c.statsd.TimingDuration("queue.enqueuemany", time.Since(startLinks), 1.0, statsd.Tag{"domain", *Domain})
 
 	go func() {
 		wg.Wait()
+		close(linkchan)
 	}()
 
-	c.statsd.TimingDuration("queue.enqueuemany", time.Since(linksStart), 1.0, statsd.Tag{"domain", *Domain})
-	Log.Info("new tasks", "w", WorkerNo, "added-urls", added, "total-urls", len(links))
+	// Log.Info("new tasks", "w", WorkerNo, "added-urls", added, "total-urls", total)
 
 	saveStart := time.Now()
 	if c.DoSaveContent {
@@ -159,12 +188,11 @@ func getHref(t html.Token) (ok bool, href string) {
 	return
 }
 
-func (c *Crawler) Parse(reader *bytes.Reader) []*Link {
+func (c *Crawler) Parse(reader *bytes.Reader, ch chan<- *Link, wg *sync.WaitGroup) []*Link {
 	start := time.Now()
 	defer c.statsd.Timing("crawl.parser", int64(time.Since(start)), 1.0, statsd.Tag{"domain", *Domain})
 	tokenizer := html.NewTokenizer(reader)
 	links := make([]*Link, 0)
-
 	var l *Link
 
 	for {
@@ -203,14 +231,13 @@ func (c *Crawler) Parse(reader *bytes.Reader) []*Link {
 				continue
 			}
 			if l != nil {
+				// ch <- l
+				// wg.Add(1)
 				links = append(links, l)
 				l = nil
 			}
 		}
 	}
-
-	return links
-
 }
 
 func (c *Crawler) Run(MaxGoroutine int) {
