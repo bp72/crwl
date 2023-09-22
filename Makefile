@@ -34,8 +34,8 @@ build-with-race: test-with-race
 
 run: build
 	# bin/crwl -domain www.xvideos.com -use-redis
-	bin/crwl -domain hindiclips.com -use-redis
+	bin/crwl -domain hindiclips.com -use-redis -statsd-addr 192.168.1.140:8125
 
 run-with-race: build-with-race
 	# bin/crwl -domain www.xvideos.com -use-redis
-	bin/crwl -domain hindiclips.com -use-redis
+	bin/crwl -domain hindiclips.com -use-redis -statsd-addr 192.168.1.140:8125
