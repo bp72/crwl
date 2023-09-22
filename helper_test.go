@@ -37,3 +37,39 @@ func TestTask(t *testing.T) {
 		t.Errorf("Test Task.GetFilename() failed. Got %q, expected %q", gotFilename, expectedFilename)
 	}
 }
+
+func TestTaskSubdirs(t *testing.T) {
+	task := &Task{
+		Uri: "/subdir/name-of-uri",
+		Site: &Site{
+			BaseUrl:       "http://domain.com",
+			MaxDepth:      3,
+			KeywordPrefix: "/db",
+		},
+		Depth: 0,
+	}
+
+	task.Uri = "/a"
+	expectedSubdirTree := "a/0/0"
+	gotSubdirTree := task.GetSubTree()
+
+	if gotSubdirTree != expectedSubdirTree {
+		t.Errorf("Test Task.GetSubdirTree() failed. Got %q, expected %q", gotSubdirTree, expectedSubdirTree)
+	}
+
+	task.Uri = "/ab"
+	expectedSubdirTree = "a/b/0"
+	gotSubdirTree = task.GetSubTree()
+
+	if gotSubdirTree != expectedSubdirTree {
+		t.Errorf("Test Task.GetSubdirTree() failed. Got %q, expected %q", gotSubdirTree, expectedSubdirTree)
+	}
+
+	task.Uri = "/abc"
+	expectedSubdirTree = "a/b/c"
+	gotSubdirTree = task.GetSubTree()
+
+	if gotSubdirTree != expectedSubdirTree {
+		t.Errorf("Test Task.GetSubdirTree() failed. Got %q, expected %q", gotSubdirTree, expectedSubdirTree)
+	}
+}

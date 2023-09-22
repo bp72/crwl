@@ -38,11 +38,19 @@ func (t *Task) GetUrl() string {
 }
 
 func (t *Task) GetSubTree() string {
-	if t.Uri == "/" || t.Uri == "" {
+	filename := path.Base(t.Uri)
+
+	if len(filename) == 0 {
 		return "i/n/d"
 	}
 
-	filename := path.Base(t.Uri)
+	if len(filename) == 1 {
+		return filename + "/0/0"
+	}
+
+	if len(filename) == 2 {
+		return filename[:1] + "/" + filename[1:2] + "/0"
+	}
 
 	return filename[:1] + "/" + filename[1:2] + "/" + filename[2:3]
 }
