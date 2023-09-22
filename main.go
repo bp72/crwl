@@ -82,6 +82,8 @@ func main() {
 	}
 	defer statsdClient.Close()
 
+	Log.Info("use", "redis-addr", *RedisAddr, "base", *RedisBase, "password", *RedisPass)
+
 	q := NewRedisQueue(
 		RedisConnectionParams{
 			Addr:     *RedisAddr,
