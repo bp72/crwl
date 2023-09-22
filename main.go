@@ -34,8 +34,9 @@ var (
 	DoNotStore       = flag.Bool("do-not-store", false, "Do not store content")
 	UseHttp          = flag.Bool("use-http", false, "use http proto")
 	Limit            = flag.Int("max-crawl", 100000, "set max amount of page to crawl")
-	RedisHost        = flag.String("redis-host", "", "redis host")
-	RedisPort        = flag.Int("redis-port", 6379, "redis port")
+	RedisAddr        = flag.String("redis-addr", "127.0.0.1:6379", "redis addr")
+	RedisBase        = flag.Int("redis-base", 0, "redis base")
+	RedisPass        = flag.String("redis-pass", "", "redis pass")
 	UseInternalCache = flag.Bool("use-internal-cache", false, "Use internal cache insted of Redis")
 	TaskUri          = flag.String("task-uri", "", "tasks with uri")
 	UseRedis         = flag.Bool("use-redis", true, "use redis as queue backend")
@@ -83,9 +84,9 @@ func main() {
 
 	q := NewRedisQueue(
 		RedisConnectionParams{
-			Addr:     "192.168.1.140:6379",
-			Base:     0,
-			Password: "ddlmaster",
+			Addr:     *RedisAddr,
+			Base:     *RedisBase,
+			Password: *RedisPass,
 			Domain:   *Domain,
 			Timeout:  2000 * time.Millisecond,
 		},
@@ -93,9 +94,9 @@ func main() {
 
 	v := NewRedisCache(
 		RedisConnectionParams{
-			Addr:     "192.168.1.140:6379",
-			Base:     0,
-			Password: "ddlmaster",
+			Addr:     *RedisAddr,
+			Base:     *RedisBase,
+			Password: *RedisPass,
 			Domain:   *Domain,
 			Timeout:  2000 * time.Millisecond,
 		},
