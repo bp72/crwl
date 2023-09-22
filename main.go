@@ -18,7 +18,6 @@ import (
 	// "math/rand"
 
 	"os"
-	"strings"
 	"time"
 )
 
@@ -41,6 +40,7 @@ var (
 	TaskUri          = flag.String("task-uri", "", "tasks with uri")
 	UseRedis         = flag.Bool("use-redis", true, "use redis as queue backend")
 	StatsdAddr       = flag.String("statsd-addr", "127.0.0.1:8125", "statsd collector addr")
+	StorePath        = flag.String("store-path", "/tmp", "store pages to this dir")
 	LastProxy        = 0
 )
 
@@ -63,9 +63,7 @@ func init() {
 }
 
 func GetMetricsPrefix() string {
-	domain := strings.Replace(*Domain, ".", "_", -1)
-	domain = strings.Replace(domain, ":", "_", -1)
-	return fmt.Sprintf("crawler") // .%s", domain)
+	return "crawler"
 }
 
 func main() {
@@ -105,7 +103,7 @@ func main() {
 
 	Log.Info("use", "queue", "redis", "size", q.Size(context.Background()))
 	// q := &InmemQueue{}
-
+	StorePathForDomain := fmt.Sprintf("%s/%s", *StorePath, *Domain)
 	baseUrl := fmt.Sprintf("https://%s", *Domain) // "https://hindiclips.com"
 	if *UseHttp {
 		baseUrl = fmt.Sprintf("http://%s", *Domain)
@@ -129,7 +127,7 @@ func main() {
 		}
 	}
 
-	crawler := NewCrawler(q, v)
+	crawler := NewCrawler(q, v, StorePathForDomain)
 	crawler.statsd = statsdClient
 
 	if *UseGooglebot {

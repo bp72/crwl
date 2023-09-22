@@ -84,7 +84,6 @@ func (c *Crawler) Crawl(WorkerNo int) {
 	linkchan := make(chan *Link)
 
 	links := c.Parse(reader, linkchan, &wg)
-	// c.EnqeueMany(task, linkchan, &wg)
 	startLinks := time.Now()
 
 	for _, link := range links {
@@ -115,12 +114,13 @@ func (c *Crawler) Crawl(WorkerNo int) {
 	saveStart := time.Now()
 	if c.DoSaveContent {
 		go func() {
-			err := os.MkdirAll(c.StorePath, os.ModePerm)
+			dirPath := fmt.Sprintf("%s/%s", c.StorePath, task.GetSubTree())
+			err := os.MkdirAll(dirPath, os.ModePerm)
 			if err != nil {
 				Log.Error("error", "w", WorkerNo, "err", err)
 			}
 
-			f, err := os.Create(fmt.Sprintf("%s/%s", c.StorePath, task.GetFilename()))
+			f, err := os.Create(fmt.Sprintf("%s/%s", dirPath, task.GetFilename()))
 
 			if err != nil {
 				panic(err)
@@ -285,7 +285,7 @@ func (c *Crawler) Enqueue(t *Task) error {
 	return nil
 }
 
-func NewCrawler(Q Queue, V Visited) *Crawler {
+func NewCrawler(Q Queue, V Visited, StorePath string) *Crawler {
 	ttl, _ := time.ParseDuration("30m")
 
 	readTimeout, _ := time.ParseDuration("6000ms")
@@ -302,7 +302,7 @@ func NewCrawler(Q Queue, V Visited) *Crawler {
 		V:             V,
 		Q:             Q,
 		DoSaveContent: !*DoNotStore,
-		StorePath:     fmt.Sprintf("/home/bp/crawler/%s", *Domain),
+		StorePath:     StorePath,
 		Pool: sync.Pool{
 			New: func() interface{} {
 				proxy := proxies[LastProxy%len(proxies)]

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path"
 	"strings"
 )
 
@@ -30,7 +31,20 @@ type Task struct {
 }
 
 func (t *Task) GetUrl() string {
+	if t.Uri[0] == '/' {
+		return fmt.Sprintf("%s%s", t.Site.BaseUrl, t.Uri)
+	}
 	return fmt.Sprintf("%s/%s", t.Site.BaseUrl, t.Uri)
+}
+
+func (t *Task) GetSubTree() string {
+	if t.Uri == "/" || t.Uri == "" {
+		return "i/n/d"
+	}
+
+	filename := path.Base(t.Uri)
+
+	return filename[:1] + "/" + filename[1:2] + "/" + filename[2:3]
 }
 
 func (t *Task) GetFilename() string {
