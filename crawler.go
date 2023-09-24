@@ -71,6 +71,14 @@ func (c *Crawler) Crawl(WorkerNo int) {
 		return
 	}
 
+	startCheck := time.Now()
+	if c.V.Exists(context.Background(), task.Uri); err != nil {
+		Log.Info("already visited", "uri", task.Uri)
+		c.statsd.Inc("crawl.req.alreadyvisited", 1, 1.0, statsd.Tag{"domain", *Domain})
+		return
+	}
+	c.statsd.TimingDuration("cache.check", time.Since(startCheck), 1.0, statsd.Tag{"domain", *Domain})
+
 	Log.Info("crawl task", "w", WorkerNo, "task.uri", task.Uri, "task.depth", task.Depth, "qsize", c.Q.Size(context.Background()))
 
 	reader, err := c.Get(task.GetUrl())
@@ -81,6 +89,11 @@ func (c *Crawler) Crawl(WorkerNo int) {
 		return
 	}
 
+	go func() {
+		startPut := time.Now()
+		c.V.Add(context.Background(), task.Uri)
+		c.statsd.TimingDuration("cache.put", time.Since(startPut), 1.0, statsd.Tag{"domain", *Domain})
+	}()
 	go c.P.ParseLinks(reader, c.Q, task, c.statsd)
 
 	saveStart := time.Now()

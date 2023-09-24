@@ -109,9 +109,8 @@ func (c *RedisCache) Add(ctx context.Context, uri string) {
 	defer cancel()
 
 	key := fmt.Sprintf("%s:%s", c.Key, uri)
-
+	Log.Info("set", "key", key)
 	if _, err := c.Client.Set(ctx, key, uri, c.TTL).Result(); err != nil {
-		fmt.Println(c.Timeout)
 		panic(err)
 	}
 }
@@ -144,6 +143,7 @@ func NewRedisCache(p RedisConnectionParams) *RedisCache {
 			PoolTimeout:  time.Second * 1,
 			PoolSize:     1000,
 		}),
+		TTL: 24 * 7 * time.Hour,
 	}
 
 	return r
