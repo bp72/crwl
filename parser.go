@@ -24,7 +24,7 @@ type HtmlLinkParser struct {
 
 func (p *HtmlLinkParser) ParseLinks(reader *bytes.Reader, q Queue, t *Task, stats statsd.Statter) {
 	start := time.Now()
-	defer stats.TimingDuration("queue.enqueuemany", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
+	defer stats.TimingDuration("crawl.parser", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
 	doc, err := goquery.NewDocumentFromReader(reader)
 
 	if err != nil {
@@ -40,7 +40,11 @@ func (p *HtmlLinkParser) ParseLinks(reader *bytes.Reader, q Queue, t *Task, stat
 			Unique[Href] = true
 			nt, err := t.Site.NewTask(Href, t.Depth+1)
 			if err == nil {
-				go q.Put(context.Background(), nt)
+				go func() {
+					localStart := time.Now()
+					q.Put(context.Background(), nt)
+					defer stats.TimingDuration("queue.put", time.Since(localStart), 1.0, statsd.Tag{"domain", *Domain})
+				}()
 			}
 		}
 	})
