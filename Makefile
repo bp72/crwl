@@ -1,7 +1,7 @@
 DATE = $(shell date --iso=seconds)
 GITHASH = $(shell git rev-parse --short HEAD)
 VERSION = "1.0.0"
-SOURCES = inmemory.go redis.go storage.go helper.go proxy.go queue.go visited.go crawler.go main.go
+SOURCES = inmemory.go redis.go storage.go helper.go proxy.go queue.go visited.go crawler.go parser.go main.go
 
 test:
 	go test

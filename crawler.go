@@ -24,6 +24,7 @@ type Crawler struct {
 	Wg            sync.WaitGroup
 	Q             Queue
 	V             Visited
+	P             LinkParser
 	DoSaveContent bool
 	StorePath     string
 	statsd        statsd.Statter
@@ -80,36 +81,7 @@ func (c *Crawler) Crawl(WorkerNo int) {
 		return
 	}
 
-	var wg sync.WaitGroup
-	linkchan := make(chan *Link)
-
-	links := c.Parse(reader, linkchan, &wg)
-	startLinks := time.Now()
-
-	for _, link := range links {
-		nt, err := task.Site.NewTask(link.Href, task.Depth+1)
-
-		if err != nil {
-			continue
-		}
-
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-			c.Enqueue(nt)
-		}()
-
-	}
-
-	c.statsd.TimingDuration("queue.enqueuemany", time.Since(startLinks), 1.0, statsd.Tag{"domain", *Domain})
-
-	go func() {
-		wg.Wait()
-		close(linkchan)
-	}()
-
-	// Log.Info("new tasks", "w", WorkerNo, "added-urls", added, "total-urls", total)
+	go c.P.ParseLinks(reader, c.Q, task, c.statsd)
 
 	saveStart := time.Now()
 	if c.DoSaveContent {
@@ -301,6 +273,7 @@ func NewCrawler(Q Queue, V Visited, StorePath string) *Crawler {
 		TaskChan:      make(chan *Task),
 		V:             V,
 		Q:             Q,
+		P:             &HtmlLinkParser{},
 		DoSaveContent: !*DoNotStore,
 		StorePath:     StorePath,
 		Pool: sync.Pool{
