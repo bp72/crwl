@@ -424,7 +424,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "seriesByTag('name=stats.crawler.crawl.client.code', 'domain=hindiclips.com')"
+          "target": "seriesByTag('name=stats.crawler.crawl.client.code', 'domain=habr.com')"
         }
       ],
       "title": "Requests http codes",

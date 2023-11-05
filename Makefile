@@ -33,8 +33,7 @@ build-with-race: test-with-race
 		${SOURCES}		
 
 run: build
-	# bin/crwl -domain www.xvideos.com -use-redis
-	bin/crwl -domain hindiclips.com \
+	bin/crwl -domain habr.com \
 			 -use-redis \
 			 -statsd-addr 192.168.1.140:8125 \
 			 -store-path /tmp/crwl \
@@ -43,8 +42,7 @@ run: build
 			 -redis-pass ddlmaster
 
 run-with-race: build-with-race
-	# bin/crwl -domain www.xvideos.com -use-redis
-	bin/crwl -domain hindiclips.com \
+	bin/crwl -domain habr.com \
 			 -use-redis \
 			 -statsd-addr 192.168.1.140:8125 \
 			 -store-path /tmp/crwl \
