@@ -107,7 +107,7 @@ func main() {
 	Log.Info("use", "queue", "redis", "size", q.Size(context.Background()))
 	// q := &InmemQueue{}
 	StorePathForDomain := fmt.Sprintf("%s/%s", *StorePath, *Domain)
-	baseUrl := fmt.Sprintf("https://%s", *Domain) // "https://hindiclips.com"
+	baseUrl := fmt.Sprintf("https://%s", *Domain)
 	if *UseHttp {
 		baseUrl = fmt.Sprintf("http://%s", *Domain)
 	}
