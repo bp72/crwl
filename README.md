@@ -8,8 +8,39 @@ I faced problem to crawl site as-is for various reason: create set site structur
 # Crawler arch
 ![alt text](https://github.com/bp72/crwl/blob/feature/update-readme-to-provide-more-context/crawler-arc.png?raw=true)
 
+# Options
+
+#### Benchmark/Test mode
+Sometime you just need to traverse your site without storing the content, just to check everything works fine or how far you can go. In this case you can use **-do-not-store** option, it disables content storing function :
+```
+bin/crwl -do-not-store
+```
+
+#### Maximum crawls limitation
+Option allows to limit number of crawls with exact number, by default it's 100k pages to crawl
+```
+bin/crwl -max-crawl 1234
+```
+
+#### Maximum depth allows to set limitation on how deep crawler can go, by default it's 7
+```
+bin/crwl -max-depth 1
+```
+
+#### Maximum number of worker sets the limit of concurrent cralwers to run, by default it's 20
+```
+bin/crwl -max-workers 2
+```
+
+#### Run without any external service dependancy
+Crawler can be run standalone (without other services), however this configuration has memory limitation, since it's maintaince urls queue and visitied url in memory.
+```
+bin/crwl -use-internal-cache
+```
+
+
 ### Roadmap
-[ ] Define crawler arch
+[x] Define crawler arch
 
 ### Contributors
 
