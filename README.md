@@ -5,6 +5,23 @@
 ### Motivation
 I faced problem to crawl site as-is for various reason: create set site structure as graph, validate it, benchmark.
 
+# Get Started
+#### Clone repo
+```
+git clone git@github.com:bp72/crwl.git
+```
+
+#### Build
+```
+make build
+```
+
+#### Run
+```
+bin/crwl -domain example.com -use-internal-cache -max-depth 3 -max-workers 5
+```
+
+
 # Crawler arch
 ![alt text](https://github.com/bp72/crwl/blob/feature/update-readme-to-provide-more-context/crawler-arc.png?raw=true)
 
@@ -22,10 +39,6 @@ I faced problem to crawl site as-is for various reason: create set site structur
 - Add Grafana dashboard to repo
 - Add docker-compose to setup and run crawler with external service dependencies 
 
-
-```
-bin/crwl -domain example.com -use-internal-cache -max-depth 3 -max-workers 5
-```
 
 # Options
 
