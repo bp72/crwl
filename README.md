@@ -16,18 +16,20 @@ Sometime you just need to traverse your site without storing the content, just t
 bin/crwl -do-not-store
 ```
 
-#### Maximum crawls limitation
+#### Setting up limits
+
+Maximum crawls limitation
 Option allows to limit number of crawls with exact number, by default it's 100k pages to crawl
 ```
 bin/crwl -max-crawl 1234
 ```
 
-#### Maximum depth allows to set limitation on how deep crawler can go, by default it's 7
+Maximum depth allows to set limitation on how deep crawler can go, by default it's 7
 ```
 bin/crwl -max-depth 1
 ```
 
-#### Maximum number of worker sets the limit of concurrent cralwers to run, by default it's 20
+Maximum number of worker sets the limit of concurrent cralwers to run, by default it's 20
 ```
 bin/crwl -max-workers 2
 ```
