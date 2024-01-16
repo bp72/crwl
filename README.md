@@ -8,6 +8,16 @@ I faced problem to crawl site as-is for various reason: create set site structur
 # Crawler arch
 ![alt text](https://github.com/bp72/crwl/blob/feature/update-readme-to-provide-more-context/crawler-arc.png?raw=true)
 
+
+# Web Crawler
+- Start from the root domain and crawl the web pages with a specified depth.
+- Save the pages which contain a keyword(if provided) into database (TODO)
+- Support logging and statsd metrics
+
+```
+bin/crwl -domain example.com -use-internal-cache -max-depth 3 -max-workers 5
+```
+
 # Options
 
 #### Benchmark/Test mode
@@ -43,6 +53,5 @@ bin/crwl -use-internal-cache
 
 ### Roadmap
 [x] Define crawler arch
-
-### Contributors
+[x] Implement initial crawler version
 
