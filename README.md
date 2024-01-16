@@ -79,6 +79,11 @@ bin/crwl -statsd-addr hostname:port
 ```
 
 ### Roadmap
-[x] Define crawler arch
-[x] Implement initial crawler version
-
+- [x] Define crawler arch
+- [x] Implement initial crawler version
+- [ ] Add WebUI to control and manage crawler
+- [ ] Add Crawl delay support per domain
+- [ ] Add Data storage interface to support FS, ClickHouse, RDB
+- [ ] Respect robots.txt
+- [ ] Add Grafana dashboard to repo
+- [ ] Add docker-compose to setup and run crawler with external service dependencies 
