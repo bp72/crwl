@@ -22,35 +22,39 @@ type InmemQueue struct {
 }
 
 func (q *InmemQueue) Add(t *Task) {
+	// TODO: Deprecate Add method
 	q.Put(t)
 }
 
 func (q *InmemQueue) Put(t *Task) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+
 	node := &Node{Value: t}
-	if q.head == nil {
-		q.head = node
-		q.tail = node
-	} else {
-		q.tail.Next = node
-		q.tail = node
-	}
+	q.tail.Next = node
+	q.tail = node
 	q.size++
 }
 
-func (q *InmemQueue) Get() (*Task, error) {
+func (q *InmemQueue) Take() (*Task, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	if q.head == nil {
-		return nil, errors.New("Empty queue")
+
+	if q.head.Next == nil {
+		return nil, errors.New("empty queue")
 	}
 
-	node := q.head
-	q.head = node.Next
+	node := q.head.Next
+	q.head.Next = node.Next
 	q.size--
 	q.in_progress++
+
 	return node.Value, nil
+}
+
+func (q *InmemQueue) Get() (*Task, error) {
+	// TODO: Deprecate Get method
+	return q.Take()
 }
 
 func (q *InmemQueue) Size() int64 {
@@ -72,7 +76,6 @@ func (q *InmemQueue) LoadFromFile(site *Site, Filepath string) error {
 	}
 	defer f.Close()
 
-	// log.WithFields(logrus.Fields{"module": "LoadKeywordsFromFile", "path": path}).Info("load file")
 	scanner := bufio.NewScanner(f)
 
 	for scanner.Scan() {
@@ -85,9 +88,17 @@ func (q *InmemQueue) LoadFromFile(site *Site, Filepath string) error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		///log.WithFields(logrus.Fields{"module": "LoadKeywordsFromFile", "path": path}).Errorf("%v", err)
 		return err
 	}
 
 	return nil
+}
+
+func NewInmemQueue() *InmemQueue {
+	q := &InmemQueue{}
+
+	q.head = &Node{}
+	q.tail = q.head
+
+	return q
 }

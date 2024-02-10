@@ -28,16 +28,17 @@ bin/crwl -domain example.com -use-internal-cache -max-depth 3 -max-workers 5
 
 # Web Crawler Features
 - Start from the root domain and crawl the web pages with a specified depth.
-- Save the pages which contain a keyword(if provided) into database (TODO)
+- Save the pages
 - Support logging and statsd metrics
 
 # TODO Features
 - Add WebUI to control and manage crawler
 - Add Crawl delay support per domain
 - Add Data storage interface to support FS, ClickHouse, RDB
-- Respect robots.txt
+- Add logic to respect robots.txt
 - Add Grafana dashboard to repo
 - Add docker-compose to setup and run crawler with external service dependencies 
+- Add condition to save page content to storage, for example keyword or url pattern
 
 
 # Options
