@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"os"
 	"strings"
@@ -101,4 +102,35 @@ func NewInmemQueue() *InmemQueue {
 	q.tail = q.head
 
 	return q
+}
+
+type InmemVisited struct {
+	items map[string]bool
+	lock  sync.RWMutex
+}
+
+func (v *InmemVisited) Add(ctx context.Context, uri string) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	v.items[uri] = true
+}
+
+func (v *InmemVisited) Exists(ctx context.Context, uri string) bool {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
+	if _, exists := v.items[uri]; exists {
+		return true
+	}
+
+	return false
+}
+
+func NewInmemVisited() *InmemVisited {
+	v := &InmemVisited{
+		items: make(map[string]bool),
+	}
+
+	return v
 }
