@@ -31,11 +31,11 @@ func TestQueuePut(t *testing.T) {
 
 	q := NewInmemQueue()
 	task1 := tasks[0]
-
+	ctx := context.Background()
 	for pos, task := range tasks {
-		q.Put(task)
-		if q.Size() != int64(pos+1) {
-			t.Errorf("Test 'New Queue. Put task' failed. Invalid size. Got %d, expected %d", q.Size(), pos+1)
+		q.Put(ctx, task)
+		if q.Size(ctx) != int64(pos+1) {
+			t.Errorf("Test 'New Queue. Put task' failed. Invalid size. Got %d, expected %d", q.Size(ctx), pos+1)
 		}
 		if q.head.Next.Value != task1 {
 			t.Errorf("Test 'New Queue. Put task' failed. Invalid head item. Got %v, expected %v", q.head.Next.Value, task1)
@@ -55,13 +55,14 @@ func TestQueueTake(t *testing.T) {
 	}
 
 	q := NewInmemQueue()
+	ctx := context.Background()
 
 	for _, task := range tasks {
-		q.Put(task)
+		q.Put(ctx, task)
 	}
 
 	for pos, expectedTask := range tasks {
-		task, err := q.Take()
+		task, err := q.Take(ctx)
 		if err != nil {
 			t.Errorf("Test 'New Queue. Take task' failed. Unexpected err %v", err)
 		}
@@ -74,7 +75,7 @@ func TestQueueTake(t *testing.T) {
 	}
 
 	for pos, _ := range tasks {
-		q.TaskDone()
+		q.TaskDone(ctx)
 		if q.in_progress != len(tasks)-pos-1 {
 			t.Errorf("Test 'New Queue. Take task' failed. Invalid in progress task number. Got %d, expected %d", q.in_progress, len(tasks)-pos)
 		}

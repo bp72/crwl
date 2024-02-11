@@ -70,7 +70,7 @@ func (q *RedisQueue) Take(ctx context.Context) (*Task, error) {
 	}
 }
 
-func (q *RedisQueue) TaskDone() {
+func (q *RedisQueue) TaskDone(ctx context.Context) {
 	q.lock.Lock()
 	q.InProgress--
 	q.lock.Unlock()

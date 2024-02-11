@@ -24,8 +24,7 @@ image: $(SOURCES)
 
 build: test
 	go build -o bin/crwl \
-		-ldflags "-X main.version=$(VERSION) -X 'main.buildat=$(DATE)' -X 'main.githash=$(GITHASH)'" \
-		${SOURCES}
+		-ldflags "-X main.version=$(VERSION) -X 'main.buildat=$(DATE)' -X 'main.githash=$(GITHASH)'"
 
 build-with-race: test-with-race
 	go build -race -o bin/crwl \
@@ -53,3 +52,14 @@ run-with-race: build-with-race
 image-nas-repo: image
 	docker tag crwl:$(GITHASH) 192.168.1.140:6088/crwl:$(GITHASH)
 	docker push 192.168.1.140:6088/crwl:$(GITHASH)
+
+run-local: build
+	bin/crwl -domain habr.com \
+			 -use-internal-cache \
+			 -use-internal-queue \
+			 -statsd-addr 192.168.1.140:8125 \
+			 -store-path /tmp/crwl \
+			 -redis-addr 192.168.1.140:6379 \
+			 -redis-base 0 \
+			 -redis-pass ddlmaster \
+			 -max-workers 2

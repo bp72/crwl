@@ -12,7 +12,6 @@ import (
 
 	"github.com/cactus/go-statsd-client/v5/statsd"
 	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpproxy"
 	"golang.org/x/net/html"
 )
 
@@ -60,6 +59,7 @@ func (c *Crawler) EnqeueMany(t *Task, ch <-chan *Link, wg *sync.WaitGroup) (int,
 
 func (c *Crawler) Crawl(WorkerNo int) {
 	c.statsd.Inc("crawl.req.total", 1, 1.0, statsd.Tag{"domain", *Domain})
+	Log.Info("crawl.req.total")
 	start := time.Now()
 	task, err := c.Q.Take(context.Background())
 	c.statsd.TimingDuration("queue.take", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
@@ -83,7 +83,7 @@ func (c *Crawler) Crawl(WorkerNo int) {
 
 	reader, err := c.Get(task.GetUrl())
 	if err != nil {
-		c.Q.TaskDone()
+		c.Q.TaskDone(context.Background())
 		Log.Error("error", "w", WorkerNo, "err", err)
 		c.statsd.Inc("err", 1, 1.0, statsd.Tag{"domain", *Domain}, statsd.Tag{"type", "http-request"})
 		return
@@ -94,7 +94,7 @@ func (c *Crawler) Crawl(WorkerNo int) {
 		c.V.Add(context.Background(), task.Uri)
 		c.statsd.TimingDuration("cache.put", time.Since(startPut), 1.0, statsd.Tag{"domain", *Domain})
 	}()
-	go c.P.ParseLinks(reader, c.Q, task, c.statsd)
+	c.P.ParseLinks(reader, c.Q, task, c.statsd)
 
 	saveStart := time.Now()
 	if c.DoSaveContent {
@@ -123,7 +123,7 @@ func (c *Crawler) Crawl(WorkerNo int) {
 	}
 	c.statsd.TimingDuration("save", time.Since(saveStart), 1.0, statsd.Tag{"domain", *Domain})
 
-	c.Q.TaskDone()
+	c.Q.TaskDone(context.Background())
 	c.statsd.TimingDuration("crawl", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
 	c.statsd.Inc("crawl.req.ok", 1, 1.0, statsd.Tag{"domain", *Domain})
 	Log.Info("task done", "w", WorkerNo, "exec-time", time.Since(start))
@@ -280,7 +280,7 @@ func NewCrawler(Q Queue, V Visited, StorePath string) *Crawler {
 
 	cwlr := &Crawler{
 		TTL:       ttl,
-		UserAgent: userAgent,
+		UserAgent: GetUserAgent(*UseGooglebot),
 		// Clients:       make([]*fasthttp.Client, len(proxies)),
 		Stack:         make([]*Task, 0),
 		TaskChan:      make(chan *Task),
@@ -291,15 +291,16 @@ func NewCrawler(Q Queue, V Visited, StorePath string) *Crawler {
 		StorePath:     StorePath,
 		Pool: sync.Pool{
 			New: func() interface{} {
-				proxy := proxies[LastProxy%len(proxies)]
+				// proxy := proxies[LastProxy%len(proxies)]
 				LastProxy++
-				dial := fasthttpproxy.FasthttpHTTPDialerTimeout(proxy, writeTimeout)
-				if *DoNotUseProxy {
-					dial = (&fasthttp.TCPDialer{
-						Concurrency:      4096,
-						DNSCacheDuration: time.Hour,
-					}).Dial
-				}
+				// dial := fasthttpproxy.FasthttpHTTPDialerTimeout(proxy, writeTimeout)
+
+				// if *DoNotUseProxy {
+				dial := (&fasthttp.TCPDialer{
+					Concurrency:      4096,
+					DNSCacheDuration: time.Hour,
+				}).Dial
+				// }
 				return &fasthttp.Client{
 					ReadTimeout:                   readTimeout,
 					WriteTimeout:                  writeTimeout,
