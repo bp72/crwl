@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"sync"
+	"time"
 )
 
 type Visited interface {
@@ -10,25 +10,18 @@ type Visited interface {
 	Exists(ctx context.Context, uri string) bool
 }
 
-type InmemVisited struct {
-	items map[string]bool
-	lock  sync.RWMutex
-}
-
-func (v InmemVisited) Add(uri string) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	v.items[uri] = true
-}
-
-func (v InmemVisited) Exists(uri string) bool {
-	v.lock.RLock()
-	defer v.lock.RUnlock()
-
-	if _, exists := v.items[uri]; exists {
-		return true
+func NewVisited(useInternalCache bool) Visited {
+	if useInternalCache {
+		return NewInmemVisited()
 	}
 
-	return false
+	return NewRedisCache(
+		RedisConnectionParams{
+			Addr:     *RedisAddr,
+			Base:     *RedisBase,
+			Password: *RedisPass,
+			Domain:   *Domain,
+			Timeout:  2000 * time.Millisecond,
+		},
+	)
 }

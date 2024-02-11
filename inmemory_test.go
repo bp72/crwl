@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 )
 
@@ -30,11 +31,11 @@ func TestQueuePut(t *testing.T) {
 
 	q := NewInmemQueue()
 	task1 := tasks[0]
-
+	ctx := context.Background()
 	for pos, task := range tasks {
-		q.Put(task)
-		if q.Size() != int64(pos+1) {
-			t.Errorf("Test 'New Queue. Put task' failed. Invalid size. Got %d, expected %d", q.Size(), pos+1)
+		q.Put(ctx, task)
+		if q.Size(ctx) != int64(pos+1) {
+			t.Errorf("Test 'New Queue. Put task' failed. Invalid size. Got %d, expected %d", q.Size(ctx), pos+1)
 		}
 		if q.head.Next.Value != task1 {
 			t.Errorf("Test 'New Queue. Put task' failed. Invalid head item. Got %v, expected %v", q.head.Next.Value, task1)
@@ -54,13 +55,14 @@ func TestQueueTake(t *testing.T) {
 	}
 
 	q := NewInmemQueue()
+	ctx := context.Background()
 
 	for _, task := range tasks {
-		q.Put(task)
+		q.Put(ctx, task)
 	}
 
 	for pos, expectedTask := range tasks {
-		task, err := q.Take()
+		task, err := q.Take(ctx)
 		if err != nil {
 			t.Errorf("Test 'New Queue. Take task' failed. Unexpected err %v", err)
 		}
@@ -73,9 +75,45 @@ func TestQueueTake(t *testing.T) {
 	}
 
 	for pos, _ := range tasks {
-		q.TaskDone()
+		q.TaskDone(ctx)
 		if q.in_progress != len(tasks)-pos-1 {
 			t.Errorf("Test 'New Queue. Take task' failed. Invalid in progress task number. Got %d, expected %d", q.in_progress, len(tasks)-pos)
 		}
+	}
+}
+
+func TestInmemVisited(t *testing.T) {
+	v := NewInmemVisited()
+	ctx := context.Background()
+
+	v.Add(ctx, "1")
+
+	if len(v.items) != 1 {
+		t.Errorf("Test 'InmemVisited. Add' failed. Invalid size. Got %d, expected %d", len(v.items), 1)
+	}
+
+	v.Add(ctx, "1")
+	if len(v.items) != 1 {
+		t.Errorf("Test 'InmemVisited. Add' failed. Invalid size. Got %d, expected %d", len(v.items), 1)
+	}
+
+	v.Add(ctx, "2")
+	if len(v.items) != 2 {
+		t.Errorf("Test 'InmemVisited. Add' failed. Invalid size. Got %d, expected %d", len(v.items), 2)
+	}
+
+	exists := v.Exists(ctx, "1")
+	if exists != true {
+		t.Errorf("Test 'InmemVisited.Exists' failed. Invalid result. Got %v, expected %v", exists, true)
+	}
+
+	exists = v.Exists(ctx, "2")
+	if exists != true {
+		t.Errorf("Test 'InmemVisited.Exists' failed. Invalid result. Got %v, expected %v", exists, true)
+	}
+
+	exists = v.Exists(ctx, "3")
+	if exists != false {
+		t.Errorf("Test 'InmemVisited.Exists' failed. Invalid result. Got %v, expected %v", exists, false)
 	}
 }

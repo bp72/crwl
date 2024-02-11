@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"os"
 	"strings"
@@ -21,12 +22,12 @@ type InmemQueue struct {
 	lock        sync.Mutex
 }
 
-func (q *InmemQueue) Add(t *Task) {
+func (q *InmemQueue) Add(ctx context.Context, t *Task) {
 	// TODO: Deprecate Add method
-	q.Put(t)
+	q.Put(ctx, t)
 }
 
-func (q *InmemQueue) Put(t *Task) {
+func (q *InmemQueue) Put(ctx context.Context, t *Task) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -36,7 +37,7 @@ func (q *InmemQueue) Put(t *Task) {
 	q.size++
 }
 
-func (q *InmemQueue) Take() (*Task, error) {
+func (q *InmemQueue) Take(ctx context.Context) (*Task, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -52,16 +53,16 @@ func (q *InmemQueue) Take() (*Task, error) {
 	return node.Value, nil
 }
 
-func (q *InmemQueue) Get() (*Task, error) {
+func (q *InmemQueue) Get(ctx context.Context) (*Task, error) {
 	// TODO: Deprecate Get method
-	return q.Take()
+	return q.Take(ctx)
 }
 
-func (q *InmemQueue) Size() int64 {
+func (q *InmemQueue) Size(ctx context.Context) int64 {
 	return int64(q.size + q.in_progress)
 }
 
-func (q *InmemQueue) TaskDone() {
+func (q *InmemQueue) TaskDone(ctx context.Context) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -77,14 +78,14 @@ func (q *InmemQueue) LoadFromFile(site *Site, Filepath string) error {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-
+	ctx := context.Background()
 	for scanner.Scan() {
 		items := strings.Split(scanner.Text(), "|||")
 		task, err := site.NewTask(items[0], site.MaxDepth-1)
 		if err != nil {
 			continue
 		}
-		q.Add(task)
+		q.Put(ctx, task)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -101,4 +102,35 @@ func NewInmemQueue() *InmemQueue {
 	q.tail = q.head
 
 	return q
+}
+
+type InmemVisited struct {
+	items map[string]bool
+	lock  sync.RWMutex
+}
+
+func (v *InmemVisited) Add(ctx context.Context, uri string) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	v.items[uri] = true
+}
+
+func (v *InmemVisited) Exists(ctx context.Context, uri string) bool {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
+	if _, exists := v.items[uri]; exists {
+		return true
+	}
+
+	return false
+}
+
+func NewInmemVisited() *InmemVisited {
+	v := &InmemVisited{
+		items: make(map[string]bool),
+	}
+
+	return v
 }

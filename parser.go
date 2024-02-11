@@ -24,6 +24,7 @@ type HtmlLinkParser struct {
 
 func (p *HtmlLinkParser) ParseLinks(reader *bytes.Reader, q Queue, t *Task, stats statsd.Statter) {
 	start := time.Now()
+	Log.Info("start parsing", "owner", "HtmlLinkParser")
 	defer stats.TimingDuration("crawl.parser", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
 	doc, err := goquery.NewDocumentFromReader(reader)
 
