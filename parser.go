@@ -7,6 +7,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cactus/go-statsd-client/v5/statsd"
+	"golang.org/x/net/html"
 )
 
 type Article struct {
@@ -16,16 +17,18 @@ type Article struct {
 }
 
 type LinkParser interface {
-	ParseLinks(reader *bytes.Reader, q Queue, t *Task, stats statsd.Statter)
+	ParseLinks(reader *bytes.Reader, t *Task)
 }
 
 type HtmlLinkParser struct {
+	q     Queue
+	stats statsd.Statter
 }
 
-func (p *HtmlLinkParser) ParseLinks(reader *bytes.Reader, q Queue, t *Task, stats statsd.Statter) {
+func (p *HtmlLinkParser) ParseLinks(reader *bytes.Reader, t *Task) {
 	start := time.Now()
 	Log.Info("start parsing", "owner", "HtmlLinkParser")
-	defer stats.TimingDuration("crawl.parser", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
+	defer p.stats.TimingDuration("crawl.parser", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
 	doc, err := goquery.NewDocumentFromReader(reader)
 
 	if err != nil {
@@ -42,11 +45,47 @@ func (p *HtmlLinkParser) ParseLinks(reader *bytes.Reader, q Queue, t *Task, stat
 			nt, err := t.Site.NewTask(Href, t.Depth+1)
 			if err == nil {
 				go func() {
+					Log.Info("new", "task", nt)
 					localStart := time.Now()
-					q.Put(context.Background(), nt)
-					defer stats.TimingDuration("queue.put", time.Since(localStart), 1.0, statsd.Tag{"domain", *Domain})
+					p.q.Put(context.Background(), nt)
+					defer p.stats.TimingDuration("queue.put", time.Since(localStart), 1.0, statsd.Tag{"domain", *Domain})
 				}()
 			}
 		}
 	})
+}
+
+type HtmlLinkParser2 struct {
+	q     Queue
+	stats statsd.Statter
+}
+
+func (p *HtmlLinkParser2) ParseLinks(reader *bytes.Reader, t *Task) {
+	doc, err := html.Parse(reader)
+
+	if err != nil {
+		Log.Error("create document from reader failed", "parser", "HtmlLinkParser2", "err", err)
+	}
+
+	// Visit all nodes and extract links
+	var links []string
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "a" {
+			for _, a := range n.Attr {
+				if a.Key == "href" {
+					links = append(links, a.Val)
+					newtask, err := t.Site.NewTask(a.Val, t.Depth+1)
+					if err == nil {
+						p.q.Put(context.Background(), newtask)
+					}
+					break
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
 }

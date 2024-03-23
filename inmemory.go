@@ -47,6 +47,7 @@ func (q *InmemQueue) Take(ctx context.Context) (*Task, error) {
 
 	node := q.head.Next
 	q.head.Next = node.Next
+	node.Next = nil
 	q.size--
 	q.in_progress++
 

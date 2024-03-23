@@ -129,7 +129,7 @@ func main() {
 		}
 	}
 
-	crawler := NewCrawler(q, v, StorePathForDomain)
+	crawler := NewCrawler(q, v, StorePathForDomain, statsdClient)
 	crawler.statsd = statsdClient
 	crawler.UserAgent = GetUserAgent(*UseGooglebot)
 
