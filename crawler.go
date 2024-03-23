@@ -59,14 +59,14 @@ func (c *Crawler) EnqeueMany(t *Task, ch <-chan *Link, wg *sync.WaitGroup) (int,
 
 func (c *Crawler) Crawl(WorkerNo int) {
 	c.statsd.Inc("crawl.req.total", 1, 1.0, statsd.Tag{"domain", *Domain})
-	Log.Info("crawl.req.total")
+	Log.Info("crawl.req.total", "qsize", c.Q.Size(context.Background()))
 	start := time.Now()
 	task, err := c.Q.Take(context.Background())
 	c.statsd.TimingDuration("queue.take", time.Since(start), 1.0, statsd.Tag{"domain", *Domain})
 
 	if err != nil {
 		time.Sleep(1 * time.Second)
-		Log.Error("error", "w", WorkerNo, "err", err)
+		Log.Error("error", "w", WorkerNo, "err", err, "qsize", c.Q.Size(context.Background()))
 		c.statsd.Inc("err", 1, 1.0, statsd.Tag{"domain", *Domain}, statsd.Tag{"type", "queue-take"})
 		return
 	}
@@ -94,7 +94,8 @@ func (c *Crawler) Crawl(WorkerNo int) {
 		c.V.Add(context.Background(), task.Uri)
 		c.statsd.TimingDuration("cache.put", time.Since(startPut), 1.0, statsd.Tag{"domain", *Domain})
 	}()
-	c.P.ParseLinks(reader, c.Q, task, c.statsd)
+
+	c.P.ParseLinks(reader, task)
 
 	saveStart := time.Now()
 	if c.DoSaveContent {
@@ -270,7 +271,7 @@ func (c *Crawler) Enqueue(t *Task) error {
 	return nil
 }
 
-func NewCrawler(Q Queue, V Visited, StorePath string) *Crawler {
+func NewCrawler(Q Queue, V Visited, StorePath string, statsd statsd.Statter) *Crawler {
 	ttl, _ := time.ParseDuration("30m")
 
 	readTimeout, _ := time.ParseDuration("6000ms")
@@ -286,7 +287,7 @@ func NewCrawler(Q Queue, V Visited, StorePath string) *Crawler {
 		TaskChan:      make(chan *Task),
 		V:             V,
 		Q:             Q,
-		P:             &HtmlLinkParser{},
+		P:             &HtmlLinkParser{q: Q, stats: statsd},
 		DoSaveContent: !*DoNotStore,
 		StorePath:     StorePath,
 		Pool: sync.Pool{
